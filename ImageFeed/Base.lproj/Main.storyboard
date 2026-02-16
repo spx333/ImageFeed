@@ -149,7 +149,7 @@
                                     <outlet property="delegate" destination="yco-rr-xhw" id="7Gl-wK-1vh"/>
                                 </connections>
                             </scrollView>
-                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="DhS-OD-L0R" userLabel="backwardButton">
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="DhS-OD-L0R" userLabel="BackwardButton">
                                 <rect key="frame" x="4" y="63" width="48" height="48"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="48" id="ch2-9m-fUd"/>
@@ -160,7 +160,7 @@
                                     <action selector="didTapBackwardButton:" destination="yco-rr-xhw" eventType="touchUpInside" id="ONg-qN-huD"/>
                                 </connections>
                             </button>
-                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="TN5-yF-xl5" userLabel="shareButton">
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="TN5-yF-xl5" userLabel="ShareButton">
                                 <rect key="frame" x="159.66666666666666" y="768" width="74" height="50"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="50" id="OBb-Li-4Aj"/>
