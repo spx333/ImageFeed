@@ -16,11 +16,11 @@ struct Profile {
 
 final class ProfileViewController: UIViewController {
     
-    let avatarImageView = UIImageView()
-    let fullNameLabel = UILabel()
-    let nickNameLabel = UILabel()
-    let bioLabel = UILabel()
-    let logoutButton = UIButton(type: .custom)
+    private let avatarImageView = UIImageView()
+    private let fullNameLabel = UILabel()
+    private let nickNameLabel = UILabel()
+    private let bioLabel = UILabel()
+    private let logoutButton = UIButton(type: .custom)
     
     let mockProfile = Profile(
         avatar: "Photo",
@@ -35,7 +35,7 @@ final class ProfileViewController: UIViewController {
         
         setupAvatarImageView(profile: mockProfile)
         setupFullNameLabel(profile: mockProfile)
-        setupNicknameLabel(profile: mockProfile)
+        setupNickNameLabel(profile: mockProfile)
         setupBioLabel(profile: mockProfile)
         setupLogoutButton()
     }
@@ -65,7 +65,7 @@ final class ProfileViewController: UIViewController {
         fullNameLabel.topAnchor.constraint(equalTo: avatarImageView.bottomAnchor, constant: 8).isActive = true
     }
     
-    private func setupNicknameLabel(profile: Profile) {
+    private func setupNickNameLabel(profile: Profile) {
         nickNameLabel.text = profile.nick
         nickNameLabel.textColor = .ypGray
         nickNameLabel.font = .systemFont(ofSize: 13, weight: .regular)
