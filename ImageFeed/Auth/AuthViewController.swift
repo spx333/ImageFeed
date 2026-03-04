@@ -7,9 +7,16 @@
 
 import UIKit
 
+protocol AuthViewControllerDelegate: AnyObject {
+    func didAuthenticate(_ vc: AuthViewController)
+}
+
 final class AuthViewController: UIViewController {
     
+    private let oauth2Service = OAuth2Service.shared
     private let showWebViewSegueIdentifier = "ShowWebView"
+    
+    weak var delegate: AuthViewControllerDelegate?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -42,10 +49,40 @@ final class AuthViewController: UIViewController {
 
 extension AuthViewController: WebViewViewControllerDelegate {
     func webViewViewController(_ vc: WebViewViewController, didAuthenticateWithCode code: String) {
-        //TODO: process code
+        
+        fetchOAuthToken(code) { [weak self] result in
+                  guard let self = self else { return }
+                  
+                  switch result {
+                  case .success:
+                      vc.dismiss(animated: true) {
+                          self.delegate?.didAuthenticate(self)
+                      }
+                  case .failure(let error):
+                      self.presentErrorAlert(error: error)
+                  }
+              }
     }
     
     func webViewViewControllerDidCancel(_ vc: WebViewViewController) {
         vc.dismiss(animated: true)
+    }
+}
+
+extension AuthViewController {
+    private func fetchOAuthToken(_ code: String, completion: @escaping (Result<String, Error>) -> Void) {
+        oauth2Service.fetchOAuthToken(code: code) { result in
+            completion(result)
+        }
+    }
+    
+    private func presentErrorAlert(error: Error) {
+        let alert = UIAlertController(
+            title: "Не удалось авторизоваться",
+            message: error.localizedDescription,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "Ок", style: .default))
+        present(alert, animated: true)
     }
 }
