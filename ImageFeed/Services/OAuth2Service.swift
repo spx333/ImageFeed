@@ -27,10 +27,16 @@ final class OAuth2Service {
         }
     }
     
+    
     private let tokenStorage = OAuth2TokenStorage()
+    
+    private let urlSession = URLSession.shared
+    private var task: URLSessionTask?
+    private var lastCode: String?
     
     private func makeOAuthTokenRequest(code: String) -> URLRequest? {
         guard var urlComponents = URLComponents(string: "https://unsplash.com/oauth/token") else {
+            assertionFailure("Failed to create URL")
             return nil
         }
         
@@ -52,7 +58,25 @@ final class OAuth2Service {
     }
     
     func fetchOAuthToken(code: String, completion: @escaping (Result<String, Error>) -> Void) {
-         guard let urlRequest = makeOAuthTokenRequest(code: code) else {
+        
+        assert(Thread.isMainThread)
+        if task != nil {
+            if lastCode != code {
+                task?.cancel()
+            } else {
+                completion(.failure(NetworkError.invalidRequest))
+                return
+            }
+        } else {
+            if lastCode == code {
+                completion(.failure(NetworkError.invalidRequest))
+                return
+            }
+        }
+        
+        lastCode = code
+        
+        guard let urlRequest = makeOAuthTokenRequest(code: code) else {
              let error = NetworkError.invalidRequest
              print("OAuth2Service: invalid request error: \(error)")
              DispatchQueue.main.async {
@@ -70,6 +94,9 @@ final class OAuth2Service {
                      self.tokenStorage.token = tokenResponse.accessToken
                      DispatchQueue.main.async {
                          completion(.success(tokenResponse.accessToken))
+                         
+                         self.task = nil
+                         self.lastCode = nil
                      }
                  } catch {
                      print("OAuth2Service: decoding error: \(error)")
@@ -84,8 +111,8 @@ final class OAuth2Service {
                  }
              }
          }
-
-         task.resume()
-     }
+        self.task = task
+        task.resume()
+    }
     
 }
