@@ -7,13 +7,6 @@
 
 import UIKit
 
-struct Profile {
-    let avatar: String
-    let name: String
-    let nick: String
-    let bio: String
-}
-
 final class ProfileViewController: UIViewController {
     
     private let avatarImageView = UIImageView()
@@ -22,26 +15,38 @@ final class ProfileViewController: UIViewController {
     private let bioLabel = UILabel()
     private let logoutButton = UIButton(type: .custom)
     
-    let mockProfile = Profile(
-        avatar: "Photo",
-        name: "Екатерина Новикова",
-        nick: "@ekaterina_nov",
-        bio: "Hello, world!")
+    private let profileService = ProfileService()
+    private let tokenStorage = OAuth2TokenStorage()
+    
+    private var token: String?
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
         view.backgroundColor = .ypBlack
         
-        setupAvatarImageView(profile: mockProfile)
-        setupFullNameLabel(profile: mockProfile)
-        setupNickNameLabel(profile: mockProfile)
-        setupBioLabel(profile: mockProfile)
+        setupAvatarImageView()
+        setupFullNameLabel()
+        setupNickNameLabel()
+        setupBioLabel()
         setupLogoutButton()
+        
+        guard let token = tokenStorage.token else {
+            return
+        }
+        
+        profileService.fetchProfile(token) { result in
+            switch result {
+            case .success(let profile):
+                self.updateProfileDetails(with: profile)
+            case .failure(let error):
+                print("Error: \(error)")
+            }
+        }
     }
     
-    private func setupAvatarImageView(profile: Profile) {
-        avatarImageView.image = UIImage(named: profile.avatar)
+    private func setupAvatarImageView() {
+        //avatarImageView.image = UIImage(named: profile.avatar)
         avatarImageView.contentMode = .scaleAspectFill
         avatarImageView.clipsToBounds = true
         avatarImageView.layer.cornerRadius = 35
@@ -54,8 +59,7 @@ final class ProfileViewController: UIViewController {
         avatarImageView.heightAnchor.constraint(equalToConstant: 70).isActive = true
     }
     
-    private func setupFullNameLabel(profile: Profile) {
-        fullNameLabel.text = profile.name
+    private func setupFullNameLabel() {
         fullNameLabel.textColor = .ypWhite
         fullNameLabel.font = .systemFont(ofSize: 23, weight: .bold)
         fullNameLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -65,8 +69,7 @@ final class ProfileViewController: UIViewController {
         fullNameLabel.topAnchor.constraint(equalTo: avatarImageView.bottomAnchor, constant: 8).isActive = true
     }
     
-    private func setupNickNameLabel(profile: Profile) {
-        nickNameLabel.text = profile.nick
+    private func setupNickNameLabel() {
         nickNameLabel.textColor = .ypGray
         nickNameLabel.font = .systemFont(ofSize: 13, weight: .regular)
         nickNameLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -76,8 +79,7 @@ final class ProfileViewController: UIViewController {
         nickNameLabel.topAnchor.constraint(equalTo: fullNameLabel.bottomAnchor, constant: 8).isActive = true
     }
     
-    private func setupBioLabel(profile: Profile) {
-        bioLabel.text = profile.bio
+    private func setupBioLabel() {
         bioLabel.textColor = .ypWhite
         bioLabel.font = .systemFont(ofSize: 13, weight: .regular)
         bioLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -96,5 +98,17 @@ final class ProfileViewController: UIViewController {
         logoutButton.centerYAnchor.constraint(equalTo: avatarImageView.centerYAnchor).isActive = true
         logoutButton.widthAnchor.constraint(equalToConstant: 44).isActive = true
         logoutButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
+    }
+    
+    private func updateProfileDetails(with profile: Profile) {
+        fullNameLabel.text = profile.name.isEmpty
+            ? "Имя не указано"
+            : profile.name
+        nickNameLabel.text = profile.loginName.isEmpty
+            ? "@неизвестный_пользователь"
+            : profile.loginName
+        bioLabel.text = (profile.bio?.isEmpty ?? true)
+            ? "Профиль не заполнен"
+            : profile.bio
     }
 }
