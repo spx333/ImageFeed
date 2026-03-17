@@ -29,8 +29,13 @@ struct ProfileResult: Codable {
 }
 
 final class ProfileService {
+    static let shared = ProfileService()
+    private init() {}
+    
     private var task: URLSessionTask?
     private let urlSession = URLSession.shared
+    
+    private(set) var profile: Profile?
 
     func fetchProfile(_ token: String, completion: @escaping (Result<Profile, Error>) -> Void) {
         
@@ -54,6 +59,8 @@ final class ProfileService {
                         loginName: "@\(profileResult.username)",
                         bio: profileResult.bio
                     )
+                    self?.profile = profile
+                    ProfileImageService.shared.fetchProfileImageURL(username: profile.username) { _ in }
                     completion(.success(profile))
                 } catch {
                     completion(.failure(error))

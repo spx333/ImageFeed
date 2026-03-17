@@ -15,15 +15,12 @@ final class ProfileViewController: UIViewController {
     private let bioLabel = UILabel()
     private let logoutButton = UIButton(type: .custom)
     
-    private let profileService = ProfileService()
-    private let tokenStorage = OAuth2TokenStorage()
-    
-    private var token: String?
+    private let profileService = ProfileService.shared
+    private let storage = OAuth2TokenStorage()
+
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        view.backgroundColor = .ypBlack
         
         setupAvatarImageView()
         setupFullNameLabel()
@@ -31,17 +28,8 @@ final class ProfileViewController: UIViewController {
         setupBioLabel()
         setupLogoutButton()
         
-        guard let token = tokenStorage.token else {
-            return
-        }
-        
-        profileService.fetchProfile(token) { result in
-            switch result {
-            case .success(let profile):
-                self.updateProfileDetails(with: profile)
-            case .failure(let error):
-                print("Error: \(error)")
-            }
+        if let profile = ProfileService.shared.profile {
+            updateProfileDetails(with: profile)
         }
     }
     
