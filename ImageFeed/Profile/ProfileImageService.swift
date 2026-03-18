@@ -60,6 +60,8 @@ final class ProfileImageService {
 
                     self.avatarURL = userResult.profileImage.small
                     
+                    print(userResult.profileImage.small)
+                    
                     completion(.success(userResult.profileImage.small))
                 } catch {
                     print(error)

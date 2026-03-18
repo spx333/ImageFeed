@@ -60,7 +60,6 @@ final class ProfileService {
                         bio: profileResult.bio
                     )
                     self?.profile = profile
-                    ProfileImageService.shared.fetchProfileImageURL(username: profile.username) { _ in }
                     completion(.success(profile))
                 } catch {
                     completion(.failure(error))
