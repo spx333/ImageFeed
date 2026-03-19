@@ -28,6 +28,8 @@ struct UserResult: Codable {
 }
 
 final class ProfileImageService {
+    
+    static let didChangeNotification = Notification.Name(rawValue: "ProfileImageProviderDidChange")
 
     static let shared = ProfileImageService()
     private init() {}
@@ -60,9 +62,15 @@ final class ProfileImageService {
 
                     self.avatarURL = userResult.profileImage.small
                     
-                    print(userResult.profileImage.small)
+                    print(userResult.profileImage.small) // НАДО УДАЛИТЬ!
                     
                     completion(.success(userResult.profileImage.small))
+                    
+                    NotificationCenter.default
+                        .post(
+                            name:ProfileImageService.didChangeNotification,
+                            object: self,
+                            userInfo: ["URL": userResult.profileImage.small])
                 } catch {
                     print(error)
                 }
