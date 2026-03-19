@@ -52,31 +52,22 @@ final class ProfileImageService {
             return
         }
 
-        let task = URLSession.shared.data(for: request) { [weak self] result in
+        let task = URLSession.shared.objectTask(for: request) { [weak self] (result: Result<UserResult, Error>) in
             switch result {
+            
             case .success(let data):
                 guard let self else { return }
-
-                do {
-                    let userResult = try JSONDecoder().decode(UserResult.self, from: data)
-
-                    self.avatarURL = userResult.profileImage.small
-                    
-                    print(userResult.profileImage.small) // НАДО УДАЛИТЬ!
-                    
-                    completion(.success(userResult.profileImage.small))
-                    
-                    NotificationCenter.default
-                        .post(
-                            name:ProfileImageService.didChangeNotification,
-                            object: self,
-                            userInfo: ["URL": userResult.profileImage.small])
-                } catch {
-                    print(error)
-                }
-
+                self.avatarURL = data.profileImage.small
+                completion(.success(data.profileImage.small))
+                
+                NotificationCenter.default
+                    .post(
+                        name:ProfileImageService.didChangeNotification,
+                        object: self,
+                        userInfo: ["URL": data.profileImage.small])
+                
             case .failure(let error):
-                print("[fetchProfileImageURL]: Ошибка запроса: \(error.localizedDescription)")
+                print("ProfileImageService: Ошибка запроса: \(error.localizedDescription)")
                 completion(.failure(error))
             }
         }
