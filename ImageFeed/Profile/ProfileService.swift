@@ -57,6 +57,7 @@ final class ProfileService {
                     loginName: "@\(data.username)",
                     bio: data.bio
                 )
+                
                 self?.profile = profile
                 completion(.success(profile))
                 

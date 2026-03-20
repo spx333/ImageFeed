@@ -35,30 +35,14 @@ final class SplashViewController: UIViewController {
     }
     
     private func switchToTabBarController() {
-        let windowScene = UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .first { $0.activationState == .foregroundActive } ?? UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .first
-        
-        guard
-            let scene = windowScene,
-            let window = scene.windows.first(where: { $0.isKeyWindow }) ?? scene.windows.first
-        else {
+        guard let window = UIApplication.shared.windows.first else {
             assertionFailure("Invalid window configuration")
             return
         }
         
         let tabBarController = UIStoryboard(name: "Main", bundle: .main)
-            .instantiateViewController(withIdentifier: "TabBarController")
-        
+            .instantiateViewController(withIdentifier: "TabBarViewController")
         window.rootViewController = tabBarController
-        window.makeKeyAndVisible()
-        UIView.transition(with: window,
-                          duration: 0.3,
-                          options: [.transitionCrossDissolve],
-                          animations: nil,
-                          completion: nil)
     }
     
     private func fetchProfile(token: String) {
@@ -67,15 +51,13 @@ final class SplashViewController: UIViewController {
         profileService.fetchProfile(token) { [weak self] result in
             UIBlockingProgressHUD.dismiss()
 
-            guard let self = self else { return }
-
             switch result {
             case let .success(profile):
                 ProfileImageService.shared.fetchProfileImageURL(username: profile.username) { _ in }
-                self.switchToTabBarController()
+                self?.switchToTabBarController()
 
             case let .failure (error):
-                self.presentErrorAlert(error: error)
+                self?.presentErrorAlert(error: error)
                 break
             }
         }
@@ -112,7 +94,6 @@ extension SplashViewController {
 extension SplashViewController: AuthViewControllerDelegate {
     func didAuthenticate(_ vc: AuthViewController) {
         vc.dismiss(animated: true)
-       
         guard let token = storage.token else {
             return
         }
