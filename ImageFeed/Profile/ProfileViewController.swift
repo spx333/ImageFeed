@@ -99,6 +99,7 @@ final class ProfileViewController: UIViewController {
         logoutButton.centerYAnchor.constraint(equalTo: avatarImageView.centerYAnchor).isActive = true
         logoutButton.widthAnchor.constraint(equalToConstant: 44).isActive = true
         logoutButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        logoutButton.addTarget(self, action: #selector(didTapLogoutButton), for: .touchUpInside)
     }
     
     private func updateProfileDetails(with profile: Profile) {
@@ -139,16 +140,21 @@ final class ProfileViewController: UIViewController {
             ]) { result in
                 
                 switch result {
-
+                    
                 case .success(let value):
-
+                    
                     print(value.image)
                     print(value.cacheType)
                     print(value.source)
-
+                    
                 case .failure(let error):
                     print(error)
                 }
             }
     }
+    
+    @objc private func didTapLogoutButton() {
+    print("logout")
+    }
+    
 }
