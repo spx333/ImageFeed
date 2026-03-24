@@ -36,7 +36,7 @@ final class ProfileImageService {
 
     private(set) var avatarURL: String?
     
-    private let storage = OAuth2TokenStorage()
+    private let storage = OAuth2TokenStorage.shared
     private var task: URLSessionTask?
 
     func fetchProfileImageURL(username: String, completion: @escaping (Result<String, Error>) -> Void) {

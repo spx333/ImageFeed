@@ -17,7 +17,7 @@ final class ProfileViewController: UIViewController {
     private let logoutButton = UIButton(type: .custom)
     
     private let profileService = ProfileService.shared
-    private let storage = OAuth2TokenStorage()
+    private let storage = OAuth2TokenStorage.shared
     
     private var profileImageServiceObserver: NSObjectProtocol?
     
@@ -154,7 +154,7 @@ final class ProfileViewController: UIViewController {
     }
     
     @objc private func didTapLogoutButton() {
-    print("logout")
+        print("logout")
     }
     
 }

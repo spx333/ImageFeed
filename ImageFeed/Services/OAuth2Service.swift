@@ -28,7 +28,7 @@ final class OAuth2Service {
     }
     
     
-    private let tokenStorage = OAuth2TokenStorage()
+    private let tokenStorage = OAuth2TokenStorage.shared
     
     private let urlSession = URLSession.shared
     private var task: URLSessionTask?
