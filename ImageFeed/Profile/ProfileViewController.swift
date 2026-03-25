@@ -30,6 +30,8 @@ final class ProfileViewController: UIViewController {
         setupBioLabel()
         setupLogoutButton()
         
+        view.backgroundColor = .ypBlack
+        
         if let profile = ProfileService.shared.profile {
             updateProfileDetails(with: profile)
         }
