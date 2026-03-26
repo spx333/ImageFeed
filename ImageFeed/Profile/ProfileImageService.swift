@@ -1,0 +1,69 @@
+//
+//  ProfileImageService.swift
+//  ImageFeed
+//
+//  Created by Сергей Петров on 17.03.2026.
+//
+
+import Foundation
+
+final class ProfileImageService {
+    
+    static let didChangeNotification = Notification.Name(rawValue: "ProfileImageProviderDidChange")
+
+    static let shared = ProfileImageService()
+    private init() {}
+
+    private(set) var avatarURL: String?
+    
+    private let storage = OAuth2TokenStorage.shared
+    private var task: URLSessionTask?
+
+    func fetchProfileImageURL(username: String, completion: @escaping (Result<String, Error>) -> Void) {
+        task?.cancel()
+
+        guard let token = storage.token else {
+            completion(.failure(NetworkError.invalidRequest))
+            return
+        }
+
+        guard let request = makeProfileImageRequest(username: username, token: token) else {
+            completion(.failure(URLError(.badURL)))
+            return
+        }
+
+        let task = URLSession.shared.objectTask(for: request) { [weak self] (result: Result<UserResult, Error>) in
+            switch result {
+            
+            case .success(let data):
+                guard let self else { return }
+                self.avatarURL = data.profileImage.small
+                completion(.success(data.profileImage.small))
+                
+                NotificationCenter.default
+                    .post(
+                        name:ProfileImageService.didChangeNotification,
+                        object: self,
+                        userInfo: ["URL": data.profileImage.small])
+                
+            case .failure(let error):
+                print("ProfileImageService: Ошибка запроса: \(error.localizedDescription)")
+                completion(.failure(error))
+            }
+        }
+
+        self.task = task
+        task.resume()
+    }
+
+    private func makeProfileImageRequest(username: String, token: String) -> URLRequest? {
+        guard let url = URL(string: "https://api.unsplash.com/users/\(username)") else {
+            return nil
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        return request
+    }
+}

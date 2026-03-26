@@ -27,10 +27,16 @@ final class OAuth2Service {
         }
     }
     
-    private let tokenStorage = OAuth2TokenStorage()
+    
+    private let tokenStorage = OAuth2TokenStorage.shared
+    
+    private let urlSession = URLSession.shared
+    private var task: URLSessionTask?
+    private var lastCode: String?
     
     private func makeOAuthTokenRequest(code: String) -> URLRequest? {
         guard var urlComponents = URLComponents(string: "https://unsplash.com/oauth/token") else {
+            assertionFailure("Failed to create URL")
             return nil
         }
         
@@ -52,40 +58,56 @@ final class OAuth2Service {
     }
     
     func fetchOAuthToken(code: String, completion: @escaping (Result<String, Error>) -> Void) {
-         guard let urlRequest = makeOAuthTokenRequest(code: code) else {
-             let error = NetworkError.invalidRequest
-             print("OAuth2Service: invalid request error: \(error)")
-             DispatchQueue.main.async {
-                 completion(.failure(error))
-             }
-             return
-         }
-         
-         let task = URLSession.shared.data(for: urlRequest) { [weak self] result in
-             guard let self else { return }
-             switch result {
-             case .success(let data):
-                 do {
-                     let tokenResponse = try JSONDecoder().decode(OAuthTokenResponseBody.self, from: data)
-                     self.tokenStorage.token = tokenResponse.accessToken
-                     DispatchQueue.main.async {
-                         completion(.success(tokenResponse.accessToken))
-                     }
-                 } catch {
-                     print("OAuth2Service: decoding error: \(error)")
-                     DispatchQueue.main.async {
-                         completion(.failure(NetworkError.decodingError(error)))
-                     }
-                 }
-             case .failure(let error):
-                 print("OAuth2Service: network error: \(error)")
-                 DispatchQueue.main.async {
-                     completion(.failure(error))
-                 }
-             }
-         }
-
-         task.resume()
-     }
+        
+        assert(Thread.isMainThread)
+        if task != nil {
+            if lastCode != code {
+                task?.cancel()
+            } else {
+                completion(.failure(NetworkError.invalidRequest))
+                return
+            }
+        } else {
+            if lastCode == code {
+                completion(.failure(NetworkError.invalidRequest))
+                return
+            }
+        }
+        
+        lastCode = code
+        
+        guard let urlRequest = makeOAuthTokenRequest(code: code) else {
+            let error = NetworkError.invalidRequest
+            print("OAuth2Service: Ошибка запроса: \(error)")
+            DispatchQueue.main.async {
+                completion(.failure(error))
+            }
+            return
+        }
+        
+        let task = URLSession.shared.objectTask(for: urlRequest) { [weak self] (result: Result<OAuthTokenResponseBody, Error>) in
+            DispatchQueue.main.async {
+                
+                guard let self = self else { return }
+                
+                switch result {
+                    
+                case .success(let data):
+                    
+                    let tokenResponse = data.accessToken
+                    self.tokenStorage.token = tokenResponse
+                    completion(.success(tokenResponse))
+                    
+                case .failure(let error):
+                    print("OAuth2Service: Ошибка запроса: \(error)")
+                    completion(.failure(error))
+                }
+                self.task = nil
+                self.lastCode = nil
+            }
+        }
+        self.task = task
+        task.resume()
+    }
     
 }
