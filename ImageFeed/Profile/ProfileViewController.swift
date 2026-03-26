@@ -49,7 +49,6 @@ final class ProfileViewController: UIViewController {
     }
     
     private func setupAvatarImageView() {
-        //avatarImageView.image = UIImage(named: profile.avatar)
         avatarImageView.contentMode = .scaleAspectFill
         avatarImageView.clipsToBounds = true
         avatarImageView.layer.cornerRadius = 35
