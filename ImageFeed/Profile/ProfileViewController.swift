@@ -145,8 +145,8 @@ final class ProfileViewController: UIViewController {
                 case .success(let value):
                     
                     print(value.image)
-                    print(value.cacheType)
-                    print(value.source)
+                    //print(value.cacheType)
+                    //print(value.source)
                     
                 case .failure(let error):
                     print(error)
