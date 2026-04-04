@@ -6,16 +6,19 @@
 //
 
 import UIKit
+import Kingfisher
 
 final class SingleImageViewController: UIViewController {
     
-    var image: UIImage? {
-        didSet {
-            guard isViewLoaded, let image else { return }
-            
-            configure(with: image)
-        }
-    }
+    private let activityIndicator: UIActivityIndicatorView = {
+        let indicator = UIActivityIndicatorView(style: .large)
+        indicator.color = .white
+        indicator.translatesAutoresizingMaskIntoConstraints = false
+        indicator.hidesWhenStopped = true
+        return indicator
+    }()
+    
+    var imageURL: URL?
 
     @IBOutlet private weak var imageView: UIImageView!
     
@@ -23,25 +26,75 @@ final class SingleImageViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        scrollView.minimumZoomScale = 0.1
-        scrollView.maximumZoomScale = 1.25
-        
-        guard let image else { return }
-        configure(with: image)
-        
 
+        setupScrollView()
+        setupActivityIndicator()
+        loadImage()
+        
     }
     
-    @IBAction func didTapBackwardButton(_ sender: Any) {
-        dismiss(animated: true, completion: nil)
+    @IBAction private func didTapBackwardButton(_ sender: Any) {
+        dismiss(animated: true)
     }
     
     @IBAction func didTapShareButton(_ sender: Any) {
-        guard let image else { return }
+        guard let image = imageView.image else { return }
         let share = UIActivityViewController(activityItems: [image], applicationActivities: nil)
-        present(share, animated: true, completion: nil)
+        present(share, animated: true)
     }
+    
+    private func setupScrollView() {
+        scrollView.delegate = self
+        scrollView.minimumZoomScale = 0.1
+        scrollView.maximumZoomScale = 1.25
+    }
+    
+    private func loadImage() {
+        guard let url = imageURL else { return }
+        
+        activityIndicator.startAnimating()
+        
+        imageView.kf.setImage(with: url) { [weak self] result in
+            guard let self = self else { return }
+            
+            self.activityIndicator.stopAnimating()
+            
+            switch result {
+            case .success(let value):
+                self.imageView.image = value.image
+                self.imageView.sizeToFit()
+                self.rescaleAndCenterImageInScrollView(image: value.image)
+                
+            case .failure:
+                self.showError()
+            }
+        }
+    }
+    
+    private func showError() {
+            let alert = UIAlertController(
+                title: "Ошибка загрузки",
+                message: "Не удалось загрузить изображение. Проверьте соединение с интернетом.",
+                preferredStyle: .alert
+            )
+            
+            alert.addAction(UIAlertAction(title: "Повторить", style: .default) { [weak self] _ in
+                self?.loadImage()
+            })
+            
+            alert.addAction(UIAlertAction(title: "Закрыть", style: .cancel))
+            
+            present(alert, animated: true)
+        }
+    
+    private func setupActivityIndicator() {
+            view.addSubview(activityIndicator)
+            
+            NSLayoutConstraint.activate([
+                activityIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+                activityIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+            ])
+        }
     
     private func rescaleAndCenterImageInScrollView(image: UIImage) {
         let minZoomScale = scrollView.minimumZoomScale

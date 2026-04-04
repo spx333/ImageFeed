@@ -15,18 +15,14 @@ struct PhotoResult: Decodable {
     let description: String?
     let likedByUser: Bool
     let urls: UrlsResult
-}
-
-extension PhotoResult {
-    func toPhoto(dateFormatter: ISO8601DateFormatter) -> Photo {
-        return Photo(
-            id: id,
-            size: CGSize(width: width, height: height),
-            createdAt: createdAt.flatMap { dateFormatter.date(from: $0) },
-            welcomeDescription: description,
-            thumbImageURL: urls.thumb,
-            largeImageURL: urls.full,
-            isLiked: likedByUser
-        )
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case createdAt = "created_at"
+        case width
+        case height
+        case description
+        case likedByUser = "liked_by_user"
+        case urls
     }
 }

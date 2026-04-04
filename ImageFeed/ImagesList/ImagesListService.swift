@@ -7,6 +7,20 @@
 
 import Foundation
 
+extension PhotoResult {
+    func toPhoto(dateFormatter: ISO8601DateFormatter) -> Photo {
+        return Photo(
+            id: id,
+            size: CGSize(width: width, height: height),
+            createdAt: createdAt.flatMap { dateFormatter.date(from: $0) },
+            welcomeDescription: description,
+            thumbImageURL: urls.thumb,
+            largeImageURL: urls.full,
+            isLiked: likedByUser
+        )
+    }
+}
+
 final class ImagesListService {
     static let shared = ImagesListService()
     
