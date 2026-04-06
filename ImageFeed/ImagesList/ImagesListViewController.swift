@@ -116,6 +116,19 @@ final class ImagesListViewController: UIViewController {
          )
         
     }
+    
+    private func showErrorAlert() {
+        let alert = UIAlertController(
+            title: "Ошибка",
+            message: "Не удалось выполнить действие. Попробуйте ещё раз.",
+            preferredStyle: .alert
+        )
+        
+        let action = UIAlertAction(title: "ОК", style: .default)
+        alert.addAction(action)
+        
+        present(alert, animated: true)
+    }
 }
 
 extension ImagesListViewController: UITableViewDataSource {
@@ -130,6 +143,7 @@ extension ImagesListViewController: UITableViewDataSource {
                 ) as? ImagesListCell else {
                     return UITableViewCell()
                 }
+        cell.delegate = self
         configCell(for: cell, with: indexPath)
         
         return cell
@@ -164,6 +178,42 @@ extension ImagesListViewController: UITableViewDelegate {
         
         if indexPath.row == photos.count - 1 {
             imagesListService.fetchPhotosNextPage()
+        }
+    }
+}
+
+extension ImagesListViewController: ImagesListCellDelegate {
+    
+    func imageListCellDidTapLike(_ cell: ImagesListCell) {
+        
+        guard let indexPath = tableView.indexPath(for: cell) else { return }
+        let photo = photos[indexPath.row]
+        
+        
+        UIBlockingProgressHUD.show()
+        
+        imagesListService.changeLike(
+            photoId: photo.id,
+            isLike: !photo.isLiked
+        ) { [weak self] result in
+            
+            guard let self = self else { return }
+            
+            DispatchQueue.main.async {
+                
+                switch result {
+                case .success:
+                    
+                    self.photos = self.imagesListService.photos
+                    
+                    self.tableView.reloadRows(at: [indexPath], with: .automatic)
+                    
+                case .failure:
+                    self.showErrorAlert()
+                }
+                
+                UIBlockingProgressHUD.dismiss()
+            }
         }
     }
 }
