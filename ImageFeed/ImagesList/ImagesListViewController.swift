@@ -23,7 +23,7 @@ final class ImagesListViewController: UIViewController {
     private var photos: [Photo] = []
     private let imagesListService = ImagesListService.shared
     private var observer: NSObjectProtocol?
-
+    
     @IBOutlet private weak var tableView: UITableView!
     
     override func viewDidLoad() {
@@ -35,13 +35,13 @@ final class ImagesListViewController: UIViewController {
         setupNotificationObserver()
         
         if photos.isEmpty {
-                imagesListService.fetchPhotosNextPage()
-            }
+            imagesListService.fetchPhotosNextPage()
+        }
     }
     
     override func viewWillAppear(_ animated: Bool) {
-         super.viewWillAppear(animated)
-     }
+        super.viewWillAppear(animated)
+    }
     
     deinit {
         guard let observer else { return }
@@ -67,14 +67,14 @@ final class ImagesListViewController: UIViewController {
     }
     
     private func setupNotificationObserver() {
-                observer = NotificationCenter.default.addObserver(
-                    forName: ImagesListService.didChangeNotification,
-                    object: nil,
-                    queue: .main
-                ) { [weak self] _ in
-                    self?.updateTableViewAnimated()
-                }
-            }
+        observer = NotificationCenter.default.addObserver(
+            forName: ImagesListService.didChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.updateTableViewAnimated()
+        }
+    }
     
     private func updateTableViewAnimated() {
         let oldCount = photos.count
@@ -101,19 +101,19 @@ final class ImagesListViewController: UIViewController {
         }
         
         let likeImage = photo.isLiked
-             ? UIImage(named: "Active")
-             : UIImage(named: "No_Active")
-         
-         cell.likeButton.setImage(likeImage, for: .normal)
-         
-         let placeholder = UIImage(named: "Stub")
-         
-         cell.cellImage.kf.indicatorType = .activity
-         
-         cell.cellImage.kf.setImage(
-             with: URL(string: photo.thumbImageURL),
-             placeholder: placeholder
-         )
+        ? UIImage(named: "Active")
+        : UIImage(named: "No_Active")
+        
+        cell.likeButton.setImage(likeImage, for: .normal)
+        
+        let placeholder = UIImage(named: "Stub")
+        
+        cell.cellImage.kf.indicatorType = .activity
+        
+        cell.cellImage.kf.setImage(
+            with: URL(string: photo.thumbImageURL),
+            placeholder: placeholder
+        )
         
     }
     
@@ -138,11 +138,11 @@ extension ImagesListViewController: UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(
-                    withIdentifier: ImagesListCell.reuseIdentifier,
-                    for: indexPath
-                ) as? ImagesListCell else {
-                    return UITableViewCell()
-                }
+            withIdentifier: ImagesListCell.reuseIdentifier,
+            for: indexPath
+        ) as? ImagesListCell else {
+            return UITableViewCell()
+        }
         cell.delegate = self
         configCell(for: cell, with: indexPath)
         
@@ -159,7 +159,7 @@ extension ImagesListViewController: UITableViewDelegate {
         guard photos.indices.contains(indexPath.row) else { return 0 }
         let photo = photos[indexPath.row]
         
-
+        
         let imageInsets = UIEdgeInsets(top: 4, left: 16, bottom: 4, right: 16)
         let imageViewWidth = tableView.bounds.width - imageInsets.left - imageInsets.right
         
@@ -173,7 +173,7 @@ extension ImagesListViewController: UITableViewDelegate {
     }
     
     func tableView(_ tableView: UITableView,
-                    willDisplay cell: UITableViewCell,
+                   willDisplay cell: UITableViewCell,
                    forRowAt indexPath: IndexPath) {
         
         if indexPath.row == photos.count - 1 {

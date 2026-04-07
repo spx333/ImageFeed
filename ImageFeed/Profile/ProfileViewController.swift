@@ -106,14 +106,14 @@ final class ProfileViewController: UIViewController {
     
     private func updateProfileDetails(with profile: Profile) {
         fullNameLabel.text = profile.name.isEmpty
-            ? "Имя не указано"
-            : profile.name
+        ? "Имя не указано"
+        : profile.name
         nickNameLabel.text = profile.loginName.isEmpty
-            ? "@неизвестный_пользователь"
-            : profile.loginName
+        ? "@неизвестный_пользователь"
+        : profile.loginName
         bioLabel.text = (profile.bio?.isEmpty ?? true)
-            ? "Профиль не заполнен"
-            : profile.bio
+        ? "Профиль не заполнен"
+        : profile.bio
     }
     
     private func updateAvatar() {
@@ -146,8 +146,6 @@ final class ProfileViewController: UIViewController {
                 case .success(let value):
                     
                     print(value.image)
-                    //print(value.cacheType)
-                    //print(value.source)
                     
                 case .failure(let error):
                     print(error)
@@ -160,23 +158,22 @@ final class ProfileViewController: UIViewController {
     }
     
     private func showLogoutAlert() {
-            let alert = UIAlertController(
-                title: "Пока, пока!",
-                message: "Уверены, что хотите выйти?",
-                preferredStyle: .alert
-            )
-
-
-            let logoutAction = UIAlertAction(title: "Да", style: .default) { _ in
-                self.logoutService.logout()
-            }
-            
-            let cancelAction = UIAlertAction(title: "Нет", style: .cancel)
-
-            alert.addAction(logoutAction)
-            alert.addAction(cancelAction)
-
-            present(alert, animated: true)
+        let alert = UIAlertController(
+            title: "Пока, пока!",
+            message: "Уверены, что хотите выйти?",
+            preferredStyle: .alert
+        )
+        
+        let logoutAction = UIAlertAction(title: "Да", style: .default) { _ in
+            self.logoutService.logout()
         }
+        
+        let cancelAction = UIAlertAction(title: "Нет", style: .cancel)
+        
+        alert.addAction(logoutAction)
+        alert.addAction(cancelAction)
+        
+        present(alert, animated: true)
+    }
     
 }

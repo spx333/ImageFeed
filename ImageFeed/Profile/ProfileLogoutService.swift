@@ -15,17 +15,13 @@ final class ProfileLogoutService {
     private init() {}
     
     func logout() {
-        
         OAuth2TokenStorage.shared.token = nil
-        
         
         ProfileService.shared.resetProfile()
         ProfileImageService.shared.resetAvatar()
         ImagesListService.shared.resetImages()
         
-      
         cleanCookies()
-        
         
         switchToSplashScreen()
     }
