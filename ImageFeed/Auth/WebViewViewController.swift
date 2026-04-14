@@ -8,10 +8,6 @@
 import UIKit
 import WebKit
 
-enum WebViewConstants {
-    
-}
-
 protocol WebViewViewControllerDelegate: AnyObject {
     func webViewViewController(_ vc: WebViewViewController, didAuthenticateWithCode code: String)
     func webViewViewControllerDidCancel(_ vc: WebViewViewController)
@@ -46,6 +42,7 @@ final class WebViewViewController: UIViewController & WebViewViewControllerProto
     
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+        webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.estimatedProgress), context: nil)
     }
     
     override func observeValue(
