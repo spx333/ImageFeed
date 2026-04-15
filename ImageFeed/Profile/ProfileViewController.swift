@@ -8,7 +8,9 @@
 import UIKit
 import Kingfisher
 
-final class ProfileViewController: UIViewController {
+final class ProfileViewController: UIViewController, ProfileViewProtocol {
+    
+    private var presenter: ProfilePresenterProtocol!
     
     private let avatarImageView = UIImageView()
     private let fullNameLabel = UILabel()
@@ -22,8 +24,11 @@ final class ProfileViewController: UIViewController {
     
     private var profileImageServiceObserver: NSObjectProtocol?
     
+    private var skeletonLayers: [CAGradientLayer] = []
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+        setupView()
         
         setupAvatarImageView()
         setupFullNameLabel()
@@ -31,22 +36,70 @@ final class ProfileViewController: UIViewController {
         setupBioLabel()
         setupLogoutButton()
         
-        view.backgroundColor = .ypBlack
-        
-        if let profile = ProfileService.shared.profile {
-            updateProfileDetails(with: profile)
+        presenter?.viewDidLoad()
+    }
+    
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+
+        skeletonLayers.forEach { layer in
+            layer.frame = layer.superlayer?.bounds ?? .zero
         }
+    }
+    
+    private func makeSkeletonLayer(for view: UIView, cornerRadius: CGFloat) -> CAGradientLayer {
+        let gradient = CAGradientLayer()
+        gradient.frame = view.bounds
+        gradient.cornerRadius = cornerRadius
         
-        profileImageServiceObserver = NotificationCenter.default
-            .addObserver(
-                forName: ProfileImageService.didChangeNotification,
-                object: nil,
-                queue: .main
-            ) { [weak self] _ in
-                guard let self = self else { return }
-                self.updateAvatar()
-            }
-        updateAvatar()
+        gradient.colors = [
+            UIColor(white: 0.85, alpha: 1).cgColor,
+            UIColor(white: 0.75, alpha: 1).cgColor,
+            UIColor(white: 0.85, alpha: 1).cgColor
+        ]
+        
+        gradient.startPoint = CGPoint(x: 0, y: 0.5)
+        gradient.endPoint = CGPoint(x: 1, y: 0.5)
+        gradient.locations = [0, 0.5, 1]
+        
+        let animation = CABasicAnimation(keyPath: "locations")
+        animation.fromValue = [-1, -0.5, 0]
+        animation.toValue = [1, 1.5, 2]
+        animation.duration = 1.2
+        animation.repeatCount = .infinity
+        
+        gradient.add(animation, forKey: "skeletonAnimation")
+        
+        return gradient
+    }
+    
+    private func showSkeleton() {
+        view.layoutIfNeeded()
+
+        let avatarSkeleton = makeSkeletonLayer(for: avatarImageView, cornerRadius: 35)
+        avatarImageView.layer.addSublayer(avatarSkeleton)
+        skeletonLayers.append(avatarSkeleton)
+
+        let nameSkeleton = makeSkeletonLayer(for: fullNameLabel, cornerRadius: 8)
+        fullNameLabel.layer.addSublayer(nameSkeleton)
+        skeletonLayers.append(nameSkeleton)
+
+        let loginSkeleton = makeSkeletonLayer(for: nickNameLabel, cornerRadius: 8)
+        nickNameLabel.layer.addSublayer(loginSkeleton)
+        skeletonLayers.append(loginSkeleton)
+
+        let bioSkeleton = makeSkeletonLayer(for: bioLabel, cornerRadius: 8)
+        bioLabel.layer.addSublayer(bioSkeleton)
+        skeletonLayers.append(bioSkeleton)
+    }
+    
+    private func hideSkeleton() {
+        skeletonLayers.forEach { $0.removeFromSuperlayer() }
+        skeletonLayers.removeAll()
+    }
+    
+    private func setupView() {
+        view.backgroundColor = .ypBlack
     }
     
     private func setupAvatarImageView() {
@@ -104,7 +157,7 @@ final class ProfileViewController: UIViewController {
         logoutButton.addTarget(self, action: #selector(didTapLogoutButton), for: .touchUpInside)
     }
     
-    private func updateProfileDetails(with profile: Profile) {
+    func updateProfileDetails(profile: Profile) {
         fullNameLabel.text = profile.name.isEmpty
         ? "Имя не указано"
         : profile.name
@@ -114,43 +167,9 @@ final class ProfileViewController: UIViewController {
         bioLabel.text = (profile.bio?.isEmpty ?? true)
         ? "Профиль не заполнен"
         : profile.bio
-    }
-    
-    private func updateAvatar() {
-        guard
-            let profileImageURL = ProfileImageService.shared.avatarURL,
-            let imageUrl = URL(string: profileImageURL)
-        else { return }
         
-        print("imageURL: \(imageUrl)")
-        
-        let placeholderImage = UIImage(systemName: "person.circle.fill")?
-            .withTintColor(.lightGray, renderingMode: .alwaysOriginal)
-            .withConfiguration(UIImage.SymbolConfiguration(pointSize: 70, weight: .regular, scale: .large))
-        
-        let processor = RoundCornerImageProcessor(cornerRadius: 35)
-        
-        avatarImageView.kf.indicatorType = .activity
-        avatarImageView.kf.setImage(
-            with: imageUrl,
-            placeholder: placeholderImage,
-            options: [
-                .processor(processor),
-                .scaleFactor(UIScreen.main.scale),
-                .cacheOriginalImage,
-                .forceRefresh
-            ]) { result in
-                
-                switch result {
-                    
-                case .success(let value):
-                    
-                    print(value.image)
-                    
-                case .failure(let error):
-                    print(error)
-                }
-            }
+        hideSkeleton()
+
     }
     
     @objc private func didTapLogoutButton() {
@@ -174,6 +193,47 @@ final class ProfileViewController: UIViewController {
         alert.addAction(cancelAction)
         
         present(alert, animated: true)
+    }
+    
+    func configure(_ presenter: ProfilePresenterProtocol) {
+        self.presenter = presenter
+        presenter.view = self
+    }
+    
+    func showLogoutConfirmation() {
+       let alert = UIAlertController(
+           title: "Пока, пока!",
+           message: "Уверены, что хотите выйти?",
+           preferredStyle: .alert
+       )
+
+
+        let logoutAction = UIAlertAction(title: "Да", style: .default) { [weak self] _ in
+                self?.presenter.confirmLogout()
+            }
+       
+       let cancelAction = UIAlertAction(title: "Нет", style: .cancel)
+     
+       alert.addAction(logoutAction)
+       alert.addAction(cancelAction)
+
+       present(alert, animated: true)
+   }
+    
+    func displayAvatar(url: URL?) {
+        guard let url else {
+            hideSkeleton()
+            return
+        }
+        
+        let processor = RoundCornerImageProcessor(cornerRadius: 35)
+        
+        avatarImageView.kf.setImage(
+            with: url,
+            options: [.processor(processor)]
+        ) { [weak self] _ in
+            self?.hideSkeleton()
+        }
     }
     
 }

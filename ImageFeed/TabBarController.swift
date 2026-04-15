@@ -9,24 +9,47 @@ import UIKit
 
 final class TabBarController: UITabBarController {
     
-    override func awakeFromNib() {
-        super.awakeFromNib()
+    override func viewDidLoad() {
+        super.viewDidLoad()
         
-        setupViewControllers()
+        tabBar.isTranslucent = false
+        tabBar.backgroundColor = .ypBlack
+        
+        setupTabs()
     }
     
-    private func setupViewControllers() {
+    private func setupTabs() {
         let storyboard = UIStoryboard(name: "Main", bundle: .main)
         
-        let imagesListViewController = storyboard.instantiateViewController(withIdentifier: "ImagesListViewController")
+        guard let imagesListVC = storyboard
+            .instantiateViewController(
+                withIdentifier: "ImagesListViewController"
+            ) as? ImagesListViewController else {
+            assertionFailure("Failed to instantiate ImagesListViewController")
+            return
+        }
         
-        let profileViewController = ProfileViewController()
-        profileViewController.tabBarItem = UITabBarItem(
+        let service = ImagesListService.shared
+        let presenter = ImagesListPresenter(service: service)
+        
+        imagesListVC.presenter = presenter
+        presenter.view = imagesListVC
+        
+        imagesListVC.tabBarItem = UITabBarItem(
+            title: "",
+            image: UIImage(named: "tab_editorial_active"),
+            selectedImage: nil
+        )
+        
+        let profileVC = ProfileViewController()
+        let profilePresenter = ProfilePresenter()
+        profileVC.configure(profilePresenter)
+        profileVC.tabBarItem = UITabBarItem(
             title: "",
             image: UIImage(named: "tab_profile_active"),
             selectedImage: nil
         )
         
-        viewControllers = [imagesListViewController, profileViewController]
+        viewControllers = [imagesListVC, profileVC]
     }
 }

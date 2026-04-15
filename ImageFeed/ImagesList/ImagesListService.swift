@@ -7,13 +7,14 @@
 
 import Foundation
 
-final class ImagesListService {
+final class ImagesListService: ImagesListServiceProtocol {
+    
+    weak var delegate: ImagesListServiceDelegate?
     static let shared = ImagesListService()
-    
-    private(set) var photos: [Photo] = []
-    
     static let didChangeNotification = Notification.Name("ImagesListServiceDidChange")
     
+    private(set) var photos: [Photo] = []
+    private var isLoading = false
     private let urlSession = URLSession.shared
     private var task: URLSessionTask?
     private var likeTask: URLSessionTask?
@@ -23,7 +24,11 @@ final class ImagesListService {
     private init() {}
     
     func fetchPhotosNextPage() {
+        
         if task != nil { return }
+        
+        guard !isLoading else { return }
+        isLoading = true
         
         let nextPage = (lastLoadedPage ?? 0) + 1
         
@@ -42,13 +47,13 @@ final class ImagesListService {
                 self.photos.append(contentsOf: newPhotos)
                 self.lastLoadedPage = nextPage
                 
-                NotificationCenter.default.post(
-                    name: ImagesListService.didChangeNotification,
-                    object: self
-                )
+                self.isLoading = false
+                
+                self.delegate?.imagesListServiceDidUpdatePhotos(self)
+                
                 
             case .failure(let error):
-                print("ImagesListService: Ошибка запроса: page=\(nextPage) error=\(error)")
+                print("[ImagesListService.fetchPhotosNextPage]: Network error page=\(nextPage) error=\(error)")
                 
             }
         }
@@ -75,65 +80,69 @@ final class ImagesListService {
         return request
     }
     
+    func changeLike(
+        photoId: String,
+        isLike: Bool,
+        completion: @escaping (Result<Void, Error>) -> Void
+    ) {
+        likeTask?.cancel()
+        
+        guard let token = OAuth2TokenStorage.shared.token else {
+            completion(.failure(NetworkError.invalidRequest))
+            return
+        }
+        
+        guard let url = URL(string: "https://api.unsplash.com/photos/\(photoId)/like") else {
+            completion(.failure(NetworkError.invalidRequest))
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = isLike ? "POST" : "DELETE"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        
+        let task = urlSession.data(for: request) { [weak self] result in
+            guard let self = self else { return }
+            self.likeTask = nil
+            
+            switch result {
+            case .success:
+                
+                if let index = self.photos.firstIndex(where: { $0.id == photoId }) {
+                    let oldPhoto = self.photos[index]
+                    
+                    let newPhoto = Photo(
+                        id: oldPhoto.id,
+                        size: oldPhoto.size,
+                        createdAt: oldPhoto.createdAt,
+                        welcomeDescription: oldPhoto.welcomeDescription,
+                        thumbImageURL: oldPhoto.thumbImageURL,
+                        largeImageURL: oldPhoto.largeImageURL,
+                        isLiked: !oldPhoto.isLiked
+                    )
+                    
+                    self.photos[index] = newPhoto
+                    
+                    self.delegate?.imagesListServiceDidUpdatePhoto(
+                        self,
+                        at: index
+                    )
+                }
+           
+                completion(.success(()))
+                
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+        
+        likeTask = task
+        task.resume()
+    }
+    
     func resetImages() {
         photos = []
     }
-    
-    func changeLike(photoId: String, isLike: Bool, _ completion: @escaping (Result<Void, Error>) -> Void) {
-         likeTask?.cancel()
-         
-         guard let token = OAuth2TokenStorage.shared.token else {
-             completion(.failure(NetworkError.invalidRequest))
-             return
-         }
-         
-         guard let url = URL(string: "https://api.unsplash.com/photos/\(photoId)/like") else {
-             completion(.failure(NetworkError.invalidRequest))
-             return
-         }
-         
-         var request = URLRequest(url: url)
-         request.httpMethod = isLike ? "POST" : "DELETE"
-         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-         
-         let task = urlSession.data(for: request) { [weak self] result in
-             guard let self = self else { return }
-             self.likeTask = nil
-             
-             switch result {
-             case .success:
-                 
-                 if let index = self.photos.firstIndex(where: { $0.id == photoId }) {
-                     let oldPhoto = self.photos[index]
-                     
-                     let newPhoto = Photo(
-                         id: oldPhoto.id,
-                         size: oldPhoto.size,
-                         createdAt: oldPhoto.createdAt,
-                         welcomeDescription: oldPhoto.welcomeDescription,
-                         thumbImageURL: oldPhoto.thumbImageURL,
-                         largeImageURL: oldPhoto.largeImageURL,
-                         isLiked: !oldPhoto.isLiked
-                     )
-                     
-                     self.photos[index] = newPhoto
-                 }
-                 
-                 NotificationCenter.default.post(
-                     name: ImagesListService.didChangeNotification,
-                     object: self
-                 )
-                 
-                 completion(.success(()))
-                 
-             case .failure(let error):
-                 completion(.failure(error))
-             }
-         }
-         
-         likeTask = task
-         task.resume()
-     }
 }
 
 extension PhotoResult {
