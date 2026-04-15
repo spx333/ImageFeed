@@ -10,11 +10,7 @@ import UIKit
 final class TabBarController: UITabBarController {
     
     override func viewDidLoad() {
-        super.viewDidLoad()
-        
-        tabBar.isTranslucent = false
-        tabBar.backgroundColor = .ypBlack
-        
+        super.viewDidLoad() 
         setupTabs()
     }
     

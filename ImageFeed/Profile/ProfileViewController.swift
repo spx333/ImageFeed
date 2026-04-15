@@ -201,24 +201,24 @@ final class ProfileViewController: UIViewController, ProfileViewProtocol {
     }
     
     func showLogoutConfirmation() {
-       let alert = UIAlertController(
-           title: "Пока, пока!",
-           message: "Уверены, что хотите выйти?",
-           preferredStyle: .alert
-       )
-
-
+        let alert = UIAlertController(
+            title: "Пока, пока!",
+            message: "Уверены, что хотите выйти?",
+            preferredStyle: .alert
+        )
+        
+        
         let logoutAction = UIAlertAction(title: "Да", style: .default) { [weak self] _ in
-                self?.presenter.confirmLogout()
-            }
-       
-       let cancelAction = UIAlertAction(title: "Нет", style: .cancel)
-     
-       alert.addAction(logoutAction)
-       alert.addAction(cancelAction)
-
-       present(alert, animated: true)
-   }
+            self?.presenter.confirmLogout()
+        }
+        
+        let cancelAction = UIAlertAction(title: "Нет", style: .cancel)
+        
+        alert.addAction(logoutAction)
+        alert.addAction(cancelAction)
+        
+        present(alert, animated: true)
+    }
     
     func displayAvatar(url: URL?) {
         guard let url else {
