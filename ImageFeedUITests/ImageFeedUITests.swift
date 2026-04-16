@@ -16,6 +16,13 @@ class Image_FeedUITests: XCTestCase {
         app.launch()
     }
     
+    private func typeSlowly(_ text: String) {
+        for character in text {
+            app.typeText(String(character))
+            usleep(120_000)
+        }
+    }
+    
     func testAuth() throws {
         let authButton = app.buttons["Войти"]
         XCTAssertTrue(authButton.waitForExistence(timeout: 15))
@@ -24,24 +31,26 @@ class Image_FeedUITests: XCTestCase {
         let webView = app.webViews["UnsplashWebView"]
         XCTAssertTrue(webView.waitForExistence(timeout: 15))
         
+        let loginTextField = webView.textFields.element
+        XCTAssertTrue(loginTextField.waitForExistence(timeout: 15))
+        loginTextField.tap()
+        
+        loginTextField.tap()
+        loginTextField.typeText("ПОЧТА")
+        webView.swipeUp()
         
         if app.toolbars.buttons["Done"].exists {
             app.toolbars.buttons["Done"].tap()
         }
         
-        let loginTextField = webView.textFields.element
-        XCTAssertTrue(loginTextField.waitForExistence(timeout: 5))
-        loginTextField.tap()
-        
-        loginTextField.tap()
-        loginTextField.typeText("spx3@ya.ru")
-        webView.swipeUp()
-        
-        let passwordTextField = webView.descendants(matching: .secureTextField).element
-        XCTAssertTrue(passwordTextField.waitForExistence(timeout: 15))
+        let passwordTextField = webView.secureTextFields.element
+        XCTAssertTrue(passwordTextField.waitForExistence(timeout: 5))
         
         passwordTextField.tap()
-        passwordTextField.typeText("spx90909")
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        
+        typeSlowly("ПАРОЛЬ")
+
         webView.swipeUp()
         
         webView.buttons["Login"].tap()
@@ -89,11 +98,11 @@ class Image_FeedUITests: XCTestCase {
         app.tabBars.buttons.element(boundBy: 1).tap()
         sleep(3)
        
-        XCTAssertTrue(app.staticTexts["Name Lastname"].exists)
-        XCTAssertTrue(app.staticTexts["@username"].exists)
+        XCTAssertTrue(app.staticTexts["Sergey Petrov"].exists)
+        XCTAssertTrue(app.staticTexts["@sphinx999090909"].exists)
         sleep(3)
         app.buttons["logoutButton"].tap()
         sleep(3)
-        app.alerts["Пока пока!"].scrollViews.otherElements.buttons["Да"].tap()
+        app.alerts["Пока, пока!"].scrollViews.otherElements.buttons["Да"].tap()
     }
 }

@@ -155,6 +155,8 @@ final class ProfileViewController: UIViewController, ProfileViewProtocol {
         logoutButton.widthAnchor.constraint(equalToConstant: 44).isActive = true
         logoutButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
         logoutButton.addTarget(self, action: #selector(didTapLogoutButton), for: .touchUpInside)
+        
+        logoutButton.accessibilityIdentifier = "logoutButton"
     }
     
     func updateProfileDetails(profile: Profile) {
