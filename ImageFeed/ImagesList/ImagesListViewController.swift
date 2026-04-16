@@ -21,7 +21,7 @@ final class ImagesListViewController: UIViewController {
         return formatter
     }()
     
-    @IBOutlet private weak var tableView: UITableView!
+    @IBOutlet var tableView: UITableView!
     
     override func viewDidLoad() {
         super.viewDidLoad()
