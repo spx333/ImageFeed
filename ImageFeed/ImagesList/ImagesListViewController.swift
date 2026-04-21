@@ -8,8 +8,9 @@
 import UIKit
 import Kingfisher
 
-
 final class ImagesListViewController: UIViewController {
+    
+    var presenter: ImagesListPresenterProtocol!
     
     private let showSingleImageSegueIdentifier = "ShowSingleImage"
     
@@ -20,32 +21,14 @@ final class ImagesListViewController: UIViewController {
         return formatter
     }()
     
-    private var photos: [Photo] = []
-    private let imagesListService = ImagesListService.shared
-    private var observer: NSObjectProtocol?
-    
-    @IBOutlet private weak var tableView: UITableView!
+    @IBOutlet var tableView: UITableView!
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
         tableView.contentInset = UIEdgeInsets(top: 12, left: 0, bottom: 12, right: 0)
-        
-        photos = imagesListService.photos
-        setupNotificationObserver()
-        
-        if photos.isEmpty {
-            imagesListService.fetchPhotosNextPage()
-        }
-    }
-    
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-    }
-    
-    deinit {
-        guard let observer else { return }
-        NotificationCenter.default.removeObserver(observer)
+
+        presenter.viewDidLoad()
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
@@ -58,7 +41,7 @@ final class ImagesListViewController: UIViewController {
                 return
             }
             
-            let photo = photos[indexPath.row]
+            let photo = presenter.photo(at: indexPath.row)
             viewController.imageURL = URL(string: photo.largeImageURL)
         }
         else {
@@ -66,35 +49,8 @@ final class ImagesListViewController: UIViewController {
         }
     }
     
-    private func setupNotificationObserver() {
-        observer = NotificationCenter.default.addObserver(
-            forName: ImagesListService.didChangeNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            self?.updateTableViewAnimated()
-        }
-    }
-    
-    private func updateTableViewAnimated() {
-        let oldCount = photos.count
-        let newCount = imagesListService.photos.count
-        
-        guard newCount > oldCount else { return }
-        
-        photos = imagesListService.photos
-        
-        let indexPaths = (oldCount..<newCount).map {
-            IndexPath(row: $0, section: 0)
-        }
-        
-        tableView.performBatchUpdates {
-            tableView.insertRows(at: indexPaths, with: .automatic)
-        }
-    }
-    
     func configCell(for cell: ImagesListCell, with indexPath: IndexPath) {
-        let photo = photos[indexPath.row]
+        let photo = presenter.photo(at: indexPath.row)
         
         cell.dateLabel.text = photo.createdAt.map {
             dateFormatter.string(from: $0)
@@ -133,7 +89,7 @@ final class ImagesListViewController: UIViewController {
 
 extension ImagesListViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return photos.count
+        presenter.photosCount
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -156,8 +112,9 @@ extension ImagesListViewController: UITableViewDelegate {
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        guard photos.indices.contains(indexPath.row) else { return 0 }
-        let photo = photos[indexPath.row]
+        guard indexPath.row < presenter.photosCount else { return 0 }
+
+        let photo = presenter.photo(at: indexPath.row)
         
         
         let imageInsets = UIEdgeInsets(top: 4, left: 16, bottom: 4, right: 16)
@@ -176,45 +133,47 @@ extension ImagesListViewController: UITableViewDelegate {
                    willDisplay cell: UITableViewCell,
                    forRowAt indexPath: IndexPath) {
         
-        if indexPath.row == photos.count - 1 {
-            imagesListService.fetchPhotosNextPage()
-        }
+        presenter.willDisplayCell(at: indexPath.row)
     }
 }
 
 extension ImagesListViewController: ImagesListCellDelegate {
     
     func imageListCellDidTapLike(_ cell: ImagesListCell) {
-        
         guard let indexPath = tableView.indexPath(for: cell) else { return }
-        let photo = photos[indexPath.row]
-        
         
         UIBlockingProgressHUD.show()
         
-        imagesListService.changeLike(
-            photoId: photo.id,
-            isLike: !photo.isLiked
-        ) { [weak self] result in
-            
-            guard let self = self else { return }
-            
-            DispatchQueue.main.async {
-                
-                switch result {
-                case .success:
-                    
-                    self.photos = self.imagesListService.photos
-                    
-                    self.tableView.reloadRows(at: [indexPath], with: .automatic)
-                    
-                case .failure:
-                    self.showErrorAlert()
-                }
-                
-                UIBlockingProgressHUD.dismiss()
-            }
+        presenter.didTapLike(at: indexPath.row)
+    }
+}
+
+extension ImagesListViewController: ImagesListViewProtocol {
+    
+    
+    func insertRows(at indexPaths: [IndexPath]) {
+        tableView.performBatchUpdates {
+            tableView.insertRows(at: indexPaths, with: .automatic)
         }
+    }
+    
+    func reloadRow(at index: Int) {
+        let indexPath = IndexPath(row: index, section: 0)
+        tableView.reloadRows(at: [indexPath], with: .automatic)
+        UIBlockingProgressHUD.dismiss()
+    }
+    
+    func showError(message: String) {
+        UIBlockingProgressHUD.dismiss()
+        
+        let alert = UIAlertController(
+            title: "Ошибка",
+            message: message,
+            preferredStyle: .alert
+        )
+        
+        alert.addAction(UIAlertAction(title: "ОК", style: .default))
+        present(alert, animated: true)
     }
 }
 
