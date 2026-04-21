@@ -12,7 +12,7 @@ final class ImagesListPresenter: ImagesListPresenterProtocol {
     weak var view: ImagesListViewProtocol?
     private let service: ImagesListServiceProtocol
     private var lastKnownPhotosCount: Int = 0
-   
+    
     init(service: ImagesListServiceProtocol) {
         
         self.service = service
@@ -29,10 +29,10 @@ final class ImagesListPresenter: ImagesListPresenterProtocol {
     
     func viewDidLoad() {
         lastKnownPhotosCount = service.photos.count
-
-            if service.photos.isEmpty {
-                service.fetchPhotosNextPage()
-            }
+        
+        if service.photos.isEmpty {
+            service.fetchPhotosNextPage()
+        }
     }
     
     func willDisplayCell(at index: Int) {
@@ -49,7 +49,7 @@ final class ImagesListPresenter: ImagesListPresenterProtocol {
             isLike: !photo.isLiked
         ) { [weak self] result in
             
-            guard let self = self else { return }
+            guard let self else { return }
             
             DispatchQueue.main.async {
                 if case .failure = result {
